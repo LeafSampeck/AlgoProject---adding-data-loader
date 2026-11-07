@@ -56,9 +56,13 @@ def get_dataloaders(source, config):
     if source == "synthetic":
         return get_synthetic_dataloaders(config["batch_size"], config["seq_len"],
                                          seed=config["seed"])
-    """
     if source == "fi2010":
-        from data.fi2010_loader import get_dataloaders as fi_get
+        try:
+            from data.fi2010_loader import get_dataloaders as fi_get
+        except ImportError as e:
+            raise ImportError(
+                "data/fi2010_loader.py (Person 3) is not in the repo yet, or does not "
+                "define get_dataloaders(config). Use --data synthetic until it lands."
+            ) from e
         return fi_get(config)
     raise ValueError(f"unknown data source {source!r}")
-    """

@@ -1,0 +1,71 @@
+% Section II -- Related Work (Person 2)
+% Include from main.tex with:  \input{sections/related_work}
+% Citation keys are defined in paper/references_person2.bib (merge into references.bib).
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Mid-Price Movement Prediction from Limit Order Books}
+Early work on limit order book (LOB) prediction relied on hand-crafted
+quantities such as order-flow imbalance, which has a well-documented
+short-horizon relationship with price changes~\cite{cont2014price}.
+The FI-2010 benchmark~\cite{ntakaris2018benchmark} made LOB forecasting a
+standard machine-learning task: it provides ten days of normalised
+ten-level order book data for five Finnish stocks, together with
+Up/Stationary/Down mid-price labels at horizons
+$k \in \{10, 20, 30, 50, 100\}$ events. The original paper reports
+ridge-regression and single-hidden-layer network baselines and recommends a
+chronological, anchored day-by-day evaluation protocol.
+
+Deep learning quickly became the dominant approach on this benchmark.
+Tsantekidis \emph{et al.}~\cite{tsantekidis2017cnn} showed that a
+convolutional network applied to a window of the most recent 100 LOB
+snapshots outperforms SVM and MLP baselines, establishing the
+$100 \times 40$ input format we also adopt. Sirignano and
+Cont~\cite{sirignano2019universal} trained recurrent networks on a large
+cross-section of US equities and found that the learned relationship between
+order-book state and price moves is largely universal across stocks.
+DeepLOB~\cite{zhang2019deeplob} combines convolutional layers that
+aggregate prices and volumes across levels, an Inception module that mixes
+several temporal receptive fields, and an LSTM that summarises the sequence;
+it remains one of the most widely cited LOB models.
+
+\subsection{Attention for LOB Data}
+Attention mechanisms let a model weight the most informative time steps in
+the window instead of compressing the history into a single recurrent state.
+The Temporal Attention-augmented Bilinear Layer (TABL)~\cite{tran2019tabl}
+learns a softmax attention over time inside a bilinear projection and
+achieves results competitive with much larger networks on FI-2010 with very
+few parameters. TransLOB~\cite{wallbridge2020translob} stacks dilated causal
+convolutions with Transformer self-attention~\cite{vaswani2017attention},
+the closest prior design to our CNN + standard-attention baseline. A
+recent large-scale benchmark~\cite{prata2024lobcast} re-evaluated many of
+these models under a common protocol and found that reported FI-2010 gains
+often shrink when training settings, splits and metrics are unified, which
+motivates our use of one shared configuration, chronological splits, and
+macro-F1 in addition to accuracy.
+
+\subsection{Efficient Attention}
+Standard softmax self-attention~\cite{vaswani2017attention} forms a
+$T \times T$ score matrix, so its time and memory grow as $O(T^2)$ in the
+sequence length $T$. Many efficient variants have been
+proposed~\cite{tay2022efficient}. Linformer~\cite{wang2020linformer}
+projects keys and values to a fixed lower length; the
+Performer~\cite{choromanski2021performer} approximates the softmax kernel
+with random features; and the linear Transformer of Katharopoulos
+\emph{et al.}~\cite{katharopoulos2020transformers} replaces the softmax
+with a positive feature map $\phi$ so that attention can be computed as
+$\phi(Q)\,(\phi(K)^{\top} V)$, which is $O(T)$ for fixed feature
+dimension. A complementary line of work keeps exact softmax attention but
+reduces memory traffic with fused GPU kernels such as
+FlashAttention~\cite{dao2022flashattention}. Such kernels improve constants
+but do not change the quadratic number of operations.
+
+\subsection{Positioning of This Work}
+Prior LOB models either omit attention (CNN, CNN--LSTM) or use quadratic
+softmax attention (TABL, TransLOB), and they are typically evaluated on
+accuracy alone. To our knowledge, linear attention has not been
+systematically evaluated as a drop-in replacement for softmax attention in
+a lightweight CNN-based LOB classifier. We therefore compare three models
+that are identical except for the sequence-mixing block (none, softmax,
+linear) and report both predictive quality and measured latency/memory as
+the window length grows.

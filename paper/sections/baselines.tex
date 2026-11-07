@@ -1,0 +1,57 @@
+% Section IV (part) -- Implementation: baseline models (Person 2)
+% Include inside Section IV of main.tex with:  \input{sections/baselines}
+% Parameter counts below are for DEFAULT_CONFIG in config.py; re-check them with
+%   python -m tests.test_baselines
+% if any hyperparameter changes.
+\subsection{Baseline Models}
+\label{sec:baselines}
+
+To isolate the effect of the attention mechanism, all three models share
+the same convolutional front end, positional encoding, encoder-block wrapper,
+pooling and classification head (\texttt{models/common.py}); they differ
+\emph{only} in the sequence-mixing block. Every model maps an input window
+$X \in \mathbb{R}^{B \times T \times 40}$ to logits in
+$\mathbb{R}^{B \times 3}$ and accepts any window length $T$ without
+re-instantiation.
+
+\textbf{Shared CNN backbone.} Two 1D convolutional layers (kernel size 3,
+``same'' padding, 64 channels) operate along the time axis, each followed
+by batch normalisation, GELU and dropout ($p=0.1$). Because padding
+preserves $T$, every downstream block sees the full history length.
+
+\textbf{Classification head.} Features are mean-pooled over time, then
+passed through LayerNorm, dropout and a linear layer to three logits
+(Up, Stationary, Down).
+
+\textbf{Baseline 1: CNN.} The backbone is connected directly to the head.
+With $d_{\text{model}}=64$ this model has 20{,}675 trainable parameters.
+
+\textbf{Baseline 2: CNN + standard attention.} After the backbone we add
+fixed sinusoidal positional encodings and one pre-norm Transformer encoder
+block: $h \leftarrow h + \mathrm{Drop}(\mathrm{Attn}(\mathrm{LN}(h)))$,
+$h \leftarrow h + \mathrm{Drop}(\mathrm{FFN}(\mathrm{LN}(h)))$, with a
+two-layer GELU feed-forward network of width $2 d_{\text{model}}$.
+Attention uses $H=4$ heads of size $d_h = 16$:
+\begin{equation}
+  \mathrm{Attn}(Q,K,V) = \mathrm{softmax}\!\left(\frac{QK^{\top}}{\sqrt{d_h}}\right) V ,
+\end{equation}
+which materialises a $T \times T$ score matrix per head, giving $O(T^2 d)$
+time and $O(H T^2)$ activation memory. The model has 54{,}147 parameters;
+the encoder block therefore adds 33{,}472 parameters on top of Baseline~1.
+The proposed model uses an identical block with linear attention
+substituted (Section~\ref{sec:proposed}).
+
+\textbf{Implementation note.} PyTorch's fused
+\texttt{scaled\_dot\_product\_attention} may dispatch to memory-efficient
+kernels that never store the $T \times T$ matrix. To keep the efficiency
+comparison like-for-like with our plain-PyTorch linear attention, all
+reported runs use the explicit implementation above; a unit test confirms
+that both paths produce numerically identical outputs ($\le 10^{-5}$).
+
+\textbf{Training.} All models are trained with the shared configuration:
+AdamW (learning rate $10^{-3}$, weight decay $10^{-4}$), batch size 64,
+up to 30 epochs, cross-entropy loss with inverse-frequency class weights
+computed on the training split only, and early stopping (patience 5) on
+validation macro-F1. The checkpoint with the best validation macro-F1 is
+evaluated once on the held-out test split. Random seeds for Python, NumPy
+and PyTorch are fixed before model and data-loader construction.

@@ -5,3 +5,6 @@ __pycache__/
 *.py[cod]
 #ignore VS Code settings
 .vscode/
+#ignore model checkpoints (large binaries; share via TACC / Drive instead)
+checkpoints/
+*.pt

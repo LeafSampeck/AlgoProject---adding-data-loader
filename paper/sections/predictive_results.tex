@@ -1,0 +1,48 @@
+% Section VII (part) -- Experimental Analysis: predictive results (Person 2)
+% Include inside Section VII of main.tex with:  \input{sections/predictive_results}
+%
+% The table and figure are GENERATED -- do not type numbers by hand:
+%   python -m experiments.compare_models --data fi2010 --seeds 42 43 44
+%   python -m experiments.confusion_matrices --seed 42
+% then copy results/classification_results.tex and figures/confusion_all.pdf
+% next to main.tex (or adjust the paths below).
+%
+% Every sentence marked TODO must be rewritten from the real FI-2010 numbers.
+\subsection{Predictive Performance (Experiments 1 and 3)}
+\label{sec:predictive}
+
+Table~\ref{tab:classification} reports test-set accuracy, macro-F1 and
+macro-precision for the three models at horizon $k=10$, averaged over
+three seeds (mean $\pm$ standard deviation). Because the Stationary class
+dominates FI-2010 at short horizons, a classifier that always predicts
+Stationary already attains high accuracy; we therefore treat macro-F1 as the
+primary metric.
+
+\input{results/classification_results}
+
+\textbf{Effect of adding attention (CNN vs.\ CNN + standard attention).}
+% TODO: state the macro-F1 difference and whether it exceeds the seed std.
+Adding one softmax-attention encoder block changes macro-F1 by
+\textbf{TODO} points relative to the CNN alone, at the cost of
+33{,}472 additional parameters.
+
+\textbf{Effect of the attention mechanism (standard vs.\ linear).}
+% TODO: compare rows 2 and 3. "Competitive" = within ~1 std across seeds.
+Replacing softmax attention with linear attention changes macro-F1 by
+\textbf{TODO} points. Combined with the efficiency results in
+Section~\ref{sec:efficiency}, this quantifies the accuracy--efficiency
+trade-off of the proposed model.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/confusion_all.pdf}
+  \caption{Row-normalised test-set confusion matrices (seed 42, $k=10$).
+  Diagonal entries are per-class recall; raw counts in parentheses.}
+  \label{fig:confusion}
+\end{figure*}
+
+\textbf{Error analysis.} Figure~\ref{fig:confusion} shows where each model
+errs.
+% TODO: describe from results/per_class_report.txt, e.g. whether Up and Down
+% are confused with each other (direction errors) or mostly with Stationary
+% (magnitude errors), and which model recovers the minority classes best.

@@ -64,10 +64,10 @@ def predict(model, loader, device):
         ys.append(y.cpu())
     return torch.cat(ys).numpy(), torch.cat(ps).numpy()
 
-"""
+
 def compute_metrics(y_true, y_pred):
-    Use Person 3's evaluation/metrics.py when present so every number in the
-    paper comes from one definition; fall back to sklearn until then.
+    """Use Person 3's evaluation/metrics.py when present so every number in the
+    paper comes from one definition; fall back to sklearn until then."""
     try:
         from evaluation.metrics import compute_metrics as shared
         return shared(y_true, y_pred)
@@ -78,4 +78,3 @@ def compute_metrics(y_true, y_pred):
         return {"accuracy": float(accuracy_score(y_true, y_pred)),
                 "macro_precision": float(p), "macro_recall": float(r),
                 "macro_f1": float(f1)}
-"""
